@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Swift package (`swift-tools-version: 6.0`, iOS 17+) providing `NumericTextField`, a SwiftUI view for locale-aware decimal input bound to `Decimal?` (or `Decimal` via convenience init). MIT licensed. No README yet.
+Swift package (`swift-tools-version: 6.0`, iOS 17+) providing `NumericTextField`, a SwiftUI view for locale-aware decimal input bound to `Decimal?` (or `Decimal` via convenience init). MIT licensed. User-facing docs in `README.md` — keep its examples and behavior notes in sync with API changes. CI (`.github/workflows/ci.yml`) runs `swift test` on macOS and `xcodebuild test` on the first available iPhone simulator.
 
 ## Build
 
