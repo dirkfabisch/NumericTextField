@@ -7,6 +7,8 @@
 //  maximum integer and fraction digits.
 //
 
+#if canImport(UIKit)
+
 import SwiftUI
 import UIKit
 
@@ -164,6 +166,13 @@ private struct NumericUITextField: UIViewRepresentable {
             // Switch to editing format (no grouping separators)
             if let value = parent.value {
                 textField.text = parent.formatForEditing(value)
+
+                // Align the binding with what is shown, so excess fraction
+                // digits set from outside don't survive an edit unseen
+                let rounded = parent.input.rounded(value)
+                if rounded != value {
+                    parent.value = rounded
+                }
             }
         }
 
@@ -183,82 +192,40 @@ private struct NumericUITextField: UIViewRepresentable {
         ) -> Bool {
             let currentText = textField.text ?? ""
             guard let textRange = Range(range, in: currentText) else { return false }
-            let proposedText = currentText.replacingCharacters(in: textRange, with: string)
+            let replacement = parent.input.normalizingSeparators(string)
+            let proposedText = currentText.replacingCharacters(in: textRange, with: replacement)
 
-            // Allow clearing
-            if proposedText.isEmpty {
-                parent.value = nil
-                return true
+            guard parent.input.isValid(proposedText, replacing: currentText) else { return false }
+            parent.value = parent.input.parse(proposedText)
+            if replacement == string { return true }
+
+            // The typed separator was normalized, so apply the edit ourselves
+            textField.text = proposedText
+            let cursorOffset = range.location + (replacement as NSString).length
+            if let position = textField.position(from: textField.beginningOfDocument, offset: cursorOffset) {
+                textField.selectedTextRange = textField.textRange(from: position, to: position)
             }
-
-            let separator = parent.decimalSeparator
-
-            // Validate: only digits and at most one decimal separator
-            for char in proposedText {
-                let s = String(char)
-                if s != separator && !char.isWholeNumber {
-                    return false
-                }
-            }
-
-            // Check only one separator
-            let separatorCount = proposedText.components(separatedBy: separator).count - 1
-            if separatorCount > 1 { return false }
-            if separatorCount == 1 && parent.maxFractionDigits == 0 { return false }
-
-            // Enforce digit limits
-            let parts = proposedText.split(
-                separator: Character(separator),
-                maxSplits: 1,
-                omittingEmptySubsequences: false
-            )
-
-            if parts.count == 2 {
-                if parts[0].count > parent.maxIntegerDigits { return false }
-                if parts[1].count > parent.maxFractionDigits { return false }
-            } else {
-                let digits = proposedText.replacingOccurrences(of: separator, with: "")
-                if digits.count > parent.maxIntegerDigits { return false }
-            }
-
-            // Parse and update value
-            parent.value = parent.parseDecimal(from: proposedText)
-            return true
+            return false
         }
     }
 
     // MARK: - Helpers
 
-    var decimalSeparator: String {
-        locale.decimalSeparator ?? "."
-    }
-
-    func parseDecimal(from text: String) -> Decimal? {
-        guard !text.isEmpty else { return nil }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.locale = locale
-        formatter.generatesDecimalNumbers = true
-        formatter.usesGroupingSeparator = false
-        return formatter.number(from: text)?.decimalValue
+    var input: NumericInput {
+        NumericInput(
+            maxIntegerDigits: maxIntegerDigits,
+            maxFractionDigits: maxFractionDigits,
+            locale: locale
+        )
     }
 
     func formatForDisplay(_ value: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.locale = locale
-        formatter.maximumFractionDigits = maxFractionDigits
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: value as NSDecimalNumber) ?? ""
+        input.formatForDisplay(value)
     }
 
     func formatForEditing(_ value: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.locale = locale
-        formatter.usesGroupingSeparator = false
-        formatter.maximumFractionDigits = maxFractionDigits
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: value as NSDecimalNumber) ?? ""
+        input.formatForEditing(value)
     }
 }
+
+#endif
