@@ -17,5 +17,9 @@ let package = Package(
         .target(
             name: "NumericTextField"
         ),
+        .testTarget(
+            name: "NumericTextFieldTests",
+            dependencies: ["NumericTextField"]
+        ),
     ]
 )

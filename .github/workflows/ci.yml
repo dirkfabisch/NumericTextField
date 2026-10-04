@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  logic-tests:
+    name: Logic tests (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test
+
+  ios-tests:
+    name: All tests (iOS Simulator)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pick iPhone simulator
+        # Device names differ between runner images, so take the first available iPhone
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 -E '^\s+iPhone' | grep -oE '[0-9A-F-]{36}')
+          echo "Using simulator $UDID"
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+      - run: xcodebuild test -scheme NumericTextField -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
