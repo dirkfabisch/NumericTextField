@@ -35,5 +35,7 @@ xcodebuild test -scheme NumericTextField -destination 'platform=iOS Simulator,na
 - **Two text formats:** while editing, text uses `formatForEditing` (no grouping separators, so validation stays simple); when not first responder it shows `formatForDisplay` (with grouping). Switching happens in `textFieldDidBegin/EndEditing`.
 - `updateUIView` deliberately skips text updates while the field is first responder to avoid cursor jumps — external binding changes during editing are not reflected until editing ends.
 - `maxFractionDigits == 0` switches the keyboard to `.numberPad` and rejects the separator.
-- Keyboard accessory toolbar with an `xmark` dismiss button is built in `makeUIView`.
+- **Environment:** `updateUIView` → `applyEnvironment` reads `.multilineTextAlignment` (RTL-aware) and `.disabled`. SwiftUI's `.font`, `.foregroundStyle` and `.focused` can't be read by a `UIViewRepresentable` on iOS 17, so font, color and the dismiss toolbar use custom `@Entry` environment values set via the modifiers in `NumericTextFieldModifiers.swift`; focus uses the optional `isFocused: Binding<Bool>` init parameter (synced both ways in `applyFocus` and the delegate callbacks).
+- Height comes from `sizeThatFits` (the field's intrinsic height), so it follows the font and Dynamic Type; no fixed frame.
+- `NumericTextFieldViewTests` host the view in a real `UIWindow` and inspect the `UITextField` — use that pattern for UIKit-side behavior.
 - The non-optional `Decimal` initializer maps `nil` (cleared field) to `.zero`.

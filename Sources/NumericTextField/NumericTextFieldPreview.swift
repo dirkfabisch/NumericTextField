@@ -33,6 +33,9 @@ private struct PreviewRow<Field: View>: View {
     @Previewable @State var english: Decimal?
     @Previewable @State var integer: Decimal = 42
     @Previewable @State var external: Decimal? = Decimal(string: "1.23456")
+    @Previewable @State var styled: Decimal? = 99
+    @Previewable @State var isFocused = false
+    @Previewable @State var isDisabled = false
 
     Form {
         Section("Locales") {
@@ -63,7 +66,21 @@ private struct PreviewRow<Field: View>: View {
         } footer: {
             Text("Focus the field after setting a value and watch the binding.")
         }
+
+        Section("Styling & focus") {
+            PreviewRow(title: "Styled", value: styled) {
+                NumericTextField(value: $styled, isFocused: $isFocused)
+                    .multilineTextAlignment(.trailing)
+                    .numericTextFieldFont(.monospacedDigitSystemFont(ofSize: 22, weight: .semibold))
+                    .numericTextFieldColor(.blue)
+                    .numericTextFieldDismissButton(.hidden)
+                    .disabled(isDisabled)
+            }
+            Toggle("Focused", isOn: $isFocused)
+            Toggle("Disabled", isOn: $isDisabled)
+        }
     }
+    .multilineTextAlignment(.trailing)
 }
 
 #endif
